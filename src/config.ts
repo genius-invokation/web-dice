@@ -5,7 +5,9 @@ export const BOUNDARY_THICKNESS = 0.25;
 export const BOUNDARY_HEIGHT = 20;
 
 export const DICE_SIZE = 1;
-export const DICE_MASS = 1;
+export const DICE_MASS = 1.5;
 export const DICE_RESTITUTION = 1.1;
 
 export const DICE_INIT_HEIGHT = 5;
+
+export const SIMULATE_DT = 0.016;

@@ -5,13 +5,11 @@ import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { setupBoundary, setupChessboard, setupDice } from "./setup";
+import { addChessboard, addDice } from "./setup";
+import { preSimulate, simulate } from "./physics";
+import { SIMULATE_DT } from "./config";
 
 const root = document.getElementById("root")!;
-
-const gravity = new RAPIER.Vector3(0.0, -9.81, 0.0);
-const world = new RAPIER.World(gravity);
-const dynamicBodies: [THREE.Object3D, RAPIER.RigidBody][] = [];
 
 const scene = new THREE.Scene();
 
@@ -21,7 +19,7 @@ light1.lookAt(0, 0, 0);
 scene.add(light1);
 
 const ambientLight = new THREE.AmbientLight("#ffffff", 0.5);
-scene.add(ambientLight);  
+scene.add(ambientLight);
 
 // const light2 = light1.clone();
 // light2.position.set(-2.5, 5, 5);
@@ -53,60 +51,37 @@ resizeObserver.observe(root);
 renderer.setAnimationLoop(animate);
 root.appendChild(renderer.domElement);
 
-function randomQuaternion() {
-  const u1 = Math.random();
-  const u2 = Math.random();
-  const u3 = Math.random();
+addChessboard(scene);
+const preResult = preSimulate(8);
+console.log(preResult.map((r) => "岩草风万火水雷冰"[r.finalUpFace]));
 
-  const sqrt1MinusU1 = Math.sqrt(1 - u1);
-  const sqrtU1 = Math.sqrt(u1);
-
-  const x = sqrt1MinusU1 * Math.sin(2 * Math.PI * u2);
-  const y = sqrt1MinusU1 * Math.cos(2 * Math.PI * u2);
-  const z = sqrtU1 * Math.sin(2 * Math.PI * u3);
-  const w = sqrtU1 * Math.cos(2 * Math.PI * u3);
-
-  return new THREE.Quaternion(x, y, z, w);
-}
-
-setupChessboard(scene, world);
-setupBoundary(world);
-
-for (let i = 0; i < 8; i++) {
-  const rotation = randomQuaternion();
-  const body = setupDice(
-    (1.5 - (i % 4)) * 3,
-    (0.5 - Math.floor(i / 4)) * 4,
-    rotation,
-    scene,
-    world,
-  );
-  dynamicBodies.push(body);
-}
+const dices = Array.from(preResult, () => addDice(scene));
+const totalTime = preResult.reduce((acc, r) => Math.max(acc, r.sleepTime), 0);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.target.y = 1;
 
 const clock = new THREE.Clock();
-let delta: number;
+let delta = 0;
 
-const doneDices = new Set<THREE.Object3D>();
-
+const simulator = simulate(preResult.map((r) => r.initRotation));
 function animate() {
-  delta = clock.getDelta();
-  world.timestep = Math.min(delta, 0.1);
-  world.step();
+  delta += clock.getDelta();
 
-  for (const [object, body] of dynamicBodies) {
-    const position = body.translation();
-    const rotation = body.rotation();
-    object.position.copy(position);
-    object.quaternion.copy(rotation);
-    if (!doneDices.has(object) && body.isSleeping()) {
-      doneDices.add(object);
-      console.log(doneDices);
+  if (clock.elapsedTime > totalTime) {
+    renderer.setAnimationLoop(null);
+    return;
+  }
+  while (delta > SIMULATE_DT) {
+    const transform = simulator.step();
+    for (let i = 0; i < dices.length; i++) {
+      const dice = dices[i];
+      const { translation, rotation } = transform[i];
+      dice.position.copy(translation);
+      dice.quaternion.copy(rotation);
     }
+    delta -= SIMULATE_DT;
   }
 
   controls.update();
