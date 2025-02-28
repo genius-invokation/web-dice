@@ -116,8 +116,6 @@ export interface SimulateResult {
   sleepTime: number;
 }
 
-const FACE_ID = [5, 6, 4, 7, 2, 1, 3, 0];
-
 export function preSimulate(diceCount: number): SimulateResult[] {
   const world = setupEnv();
   const bodies: {
@@ -144,7 +142,7 @@ export function preSimulate(diceCount: number): SimulateResult[] {
       const up = new THREE.Vector3(0, 1, 0).applyQuaternion(rotation);
       if (body.isSleeping()) {
         const finalUpFace =
-          FACE_ID[(+(up.x > 0) << 2) | (+(up.y > 0) << 1) | +(up.z > 0)];
+          (+(up.x > 0) << 2) | (+(up.y > 0) << 1) | +(up.z > 0);
         results.set(i, { initRotation, finalUpFace, sleepTime: time });
       }
     }

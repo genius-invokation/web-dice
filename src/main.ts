@@ -2,7 +2,6 @@ import "./style.css";
 
 import debounce from "debounce";
 import * as THREE from "three";
-import RAPIER from "@dimforge/rapier3d";
 
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { addChessboard, addDice } from "./setup";
@@ -13,13 +12,13 @@ const root = document.getElementById("root")!;
 
 const scene = new THREE.Scene();
 
-const spotLight = new THREE.DirectionalLight("#ffffff", 1.5);
+const spotLight = new THREE.SpotLight("#ffffff", 100);
 spotLight.castShadow = true;
-spotLight.position.set(0, 15, 0);
+spotLight.position.set(0, 10, 0);
 spotLight.lookAt(0, 0, 0);
 scene.add(spotLight);
 
-const ambientLight = new THREE.AmbientLight("#ffffff", 0.5);
+const ambientLight = new THREE.AmbientLight("#ffffff", 1);
 scene.add(ambientLight);
 
 const camera = new THREE.PerspectiveCamera(
@@ -34,7 +33,7 @@ camera.lookAt(0, 0, 0);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(root.clientWidth, root.clientHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.VSMShadowMap;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const resizeObserver = new ResizeObserver(
   debounce(() => {
@@ -52,7 +51,7 @@ addChessboard(scene);
 const preResult = preSimulate(8);
 console.log(preResult.map((r) => r.sleepTime));
 
-const dices = Array.from(preResult, (r) => addDice(scene, 2, r));
+const dices = Array.from(preResult, (r) => addDice(scene, 0, r));
 const totalTime = preResult.reduce((acc, r) => Math.max(acc, r.sleepTime), 0);
 
 const controls = new OrbitControls(camera, renderer.domElement);

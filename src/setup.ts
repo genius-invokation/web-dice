@@ -38,11 +38,13 @@ export function addDice(
   const diceMesh = new THREE.Mesh(diceGeometry, rotate(diceMaterials, d));
   diceMesh.castShadow = true;
   setTimeout(() => {
-    const mat = diceMesh.material[finalUpFace].clone();
+    const oldMat = diceMesh.material[finalUpFace];
+    const mat = oldMat.clone();
     mat.emissive.set(DICE_COLORS[targetColor]);
     mat.needsUpdate = true;
     diceMesh.material[finalUpFace] = mat;
-  }, preSimulate.sleepTime * 1000 - 2000);
+    oldMat.dispose();
+  }, sleepTime * 1000 - 2000);
   scene.add(diceMesh);
   return diceMesh;
 }
