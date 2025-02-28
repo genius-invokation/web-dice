@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-const colors = [
+export const DICE_COLORS = [
   "#55ddff",
   "#3e99ff",
   "#ff9955",
@@ -14,9 +14,9 @@ const colors = [
 const CANVAS_SIZE = 128;
 const ICON_R = (CANVAS_SIZE * Math.sqrt(3)) / 6;
 
-export async function getDiceMaterials(): Promise<THREE.Material[]> {
+export async function getDiceMaterials(): Promise<THREE.MeshStandardMaterial[]> {
   return Promise.all(
-    colors.map(async (color, i) => {
+    DICE_COLORS.map(async (color, i) => {
       const canvas = document.createElement("canvas");
       canvas.width = CANVAS_SIZE;
       canvas.height = CANVAS_SIZE;

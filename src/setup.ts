@@ -4,8 +4,9 @@ import {
   CHESSBOARD_LENGTH,
   CHESSBOARD_WIDTH,
 } from "./config";
-import { getDiceMaterials } from "./textures";
+import { DICE_COLORS, getDiceMaterials } from "./textures";
 import { diceGeometry } from "./geometries";
+import { SimulateResult } from "./physics";
 
 export function addChessboard(scene: THREE.Scene) {
   const floorMesh = new THREE.Mesh(
@@ -23,10 +24,25 @@ export function addChessboard(scene: THREE.Scene) {
 
 const diceMaterials = await getDiceMaterials();
 
-const diceMesh = new THREE.Mesh(diceGeometry, diceMaterials);
+function rotate<T>(arr: readonly T[], n: number): T[] {
+  return arr.slice(-n).concat(arr.slice(0, -n));
+}
 
-export function addDice(scene: THREE.Scene): THREE.Mesh {
-  const mesh = diceMesh.clone();
-  scene.add(mesh);
-  return mesh;
+export function addDice(
+  scene: THREE.Scene,
+  targetColor: number,
+  preSimulate: SimulateResult,
+): THREE.Mesh {
+  const { finalUpFace, sleepTime } = preSimulate;
+  const d = finalUpFace - targetColor;
+  const diceMesh = new THREE.Mesh(diceGeometry, rotate(diceMaterials, d));
+  diceMesh.castShadow = true;
+  setTimeout(() => {
+    const mat = diceMesh.material[finalUpFace].clone();
+    mat.emissive.set(DICE_COLORS[targetColor]);
+    mat.needsUpdate = true;
+    diceMesh.material[finalUpFace] = mat;
+  }, preSimulate.sleepTime * 1000 - 2000);
+  scene.add(diceMesh);
+  return diceMesh;
 }

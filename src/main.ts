@@ -13,17 +13,14 @@ const root = document.getElementById("root")!;
 
 const scene = new THREE.Scene();
 
-const light1 = new THREE.SpotLight(undefined, Math.PI * 100);
-light1.position.set(0, 15, 0);
-light1.lookAt(0, 0, 0);
-scene.add(light1);
+const spotLight = new THREE.DirectionalLight("#ffffff", 1.5);
+spotLight.castShadow = true;
+spotLight.position.set(0, 15, 0);
+spotLight.lookAt(0, 0, 0);
+scene.add(spotLight);
 
 const ambientLight = new THREE.AmbientLight("#ffffff", 0.5);
 scene.add(ambientLight);
-
-// const light2 = light1.clone();
-// light2.position.set(-2.5, 5, 5);
-// scene.add(light2);
 
 const camera = new THREE.PerspectiveCamera(
   50,
@@ -53,9 +50,9 @@ root.appendChild(renderer.domElement);
 
 addChessboard(scene);
 const preResult = preSimulate(8);
-console.log(preResult.map((r) => "岩草风万火水雷冰"[r.finalUpFace]));
+console.log(preResult.map((r) => r.sleepTime));
 
-const dices = Array.from(preResult, () => addDice(scene));
+const dices = Array.from(preResult, (r) => addDice(scene, 2, r));
 const totalTime = preResult.reduce((acc, r) => Math.max(acc, r.sleepTime), 0);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -67,21 +64,18 @@ let delta = 0;
 
 const simulator = simulate(preResult.map((r) => r.initRotation));
 function animate() {
-  delta += clock.getDelta();
-
-  if (clock.elapsedTime > totalTime) {
-    renderer.setAnimationLoop(null);
-    return;
-  }
-  while (delta > SIMULATE_DT) {
-    const transform = simulator.step();
-    for (let i = 0; i < dices.length; i++) {
-      const dice = dices[i];
-      const { translation, rotation } = transform[i];
-      dice.position.copy(translation);
-      dice.quaternion.copy(rotation);
+  if (clock.elapsedTime <= totalTime) {
+    delta += clock.getDelta();
+    while (delta > SIMULATE_DT) {
+      const transform = simulator.step();
+      for (let i = 0; i < dices.length; i++) {
+        const dice = dices[i];
+        const { translation, rotation } = transform[i];
+        dice.position.copy(translation);
+        dice.quaternion.copy(rotation);
+      }
+      delta -= SIMULATE_DT;
     }
-    delta -= SIMULATE_DT;
   }
 
   controls.update();
